@@ -1,4 +1,4 @@
-# Deijnsetal2022
+# Deijns_et_al_2022_NHESS
 
 This repository presents the code used to do the analysis in:
 
