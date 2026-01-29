@@ -1,0 +1,36 @@
+//FUNCTIONS
+// CloudMask Landsat 8
+function maskL8sr(image) {
+  // Bits 3 and 5 are cloud shadow and cloud, respectively.
+  var cloudShadowBitMask = (1 << 3);
+  var cloudsBitMask = (1 << 5);
+  // Get the pixel QA band.
+  var qa = image.select('pixel_qa');
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+var ndvi_patch_geometry = KARONGI_NDVI_PATCHES
+
+// NDVI function
+var addNDVI = function(image) {
+  var ndvi = image.normalizedDifference(['nir','red']).rename('NDVI').float(); // first the NIR band, then the red band
+  return image.addBands(ndvi);
+};
+// Clip Image collection to geometry
+function clip_IC(image){
+  return image.clip(ndvi_patch_geometry)
+}
+
+var L8 = Landsat8
+  .filterBounds(ndvi_patch_geometry)
+  // .map(clip_IC)
+  .map(maskL8sr)
+  .select(['B2','B3','B4','B5','B6','B7','B10'],['blue', 'green', 'red', 'nir', 'swir1', 'swir2','tir'])
+  .map(addNDVI)
+
+print(L8)
+print(ui.Chart.image.series(L8.select('NDVI'), ndvi_patch_geometry, ee.Reducer.mean(), 30),'L8 Patches');
+
